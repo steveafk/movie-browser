@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react'
 import Spinner from './Spinner.jsx'
+import { useAuth } from '../AuthContext.jsx'
 import { API_BASE_URL, API_OPTIONS } from '../tmdb.js'
 
-const MovieModal = ({ movieId, onClose }) => {
+const MovieModal = ({ movieId, onClose, watchlist, onRequireAuth }) => {
+  const { user } = useAuth()
   const [movie, setMovie] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
 
-  // Fetch details kag casts of the selected movie from TMDB
+  // Fetch details + cast for the selected movie
   useEffect(() => {
     let cancelled = false
 
@@ -36,7 +38,7 @@ const MovieModal = ({ movieId, onClose }) => {
     }
   }, [movieId])
 
-  // Close on Escape kag lock background scroll while open
+  // Close on Escape + lock background scroll while open
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === 'Escape') onClose()
@@ -51,6 +53,14 @@ const MovieModal = ({ movieId, onClose }) => {
   }, [onClose])
 
   const cast = movie?.credits?.cast?.slice(0, 10) || []
+  const saved = movie ? watchlist.isSaved(movie.id) : false
+
+  // Signed-out users get the sign-in form; signed-in users add/remove
+  const handleWatchlist = () => {
+    if (!user) return onRequireAuth()
+    if (saved) watchlist.remove(movie.id)
+    else watchlist.add(movie)
+  }
 
   return (
     <div
@@ -67,7 +77,7 @@ const MovieModal = ({ movieId, onClose }) => {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 text-3xl leading-none text-gray-100 hover:text-white cursor-pointer"
+          className="absolute right-4 top-4 cursor-pointer text-3xl leading-none text-gray-100 hover:text-white"
         >
           &times;
         </button>
@@ -98,7 +108,17 @@ const MovieModal = ({ movieId, onClose }) => {
               {movie.vote_average ? ` • ⭐ ${movie.vote_average.toFixed(1)}` : ''}
             </p>
 
-            <p className="mt-4 text-light-200 leading-relaxed">
+            <button
+              type="button"
+              onClick={handleWatchlist}
+              className={`mx-auto mt-4 block cursor-pointer rounded-lg px-5 py-2 font-bold text-white ${
+                saved ? 'bg-light-100/10' : 'bg-indigo-600'
+              }`}
+            >
+              {saved ? '✓ In your watchlist (remove)' : '+ Add to watchlist'}
+            </button>
+
+            <p className="mt-4 leading-relaxed text-light-200">
               {movie.overview || 'No description available.'}
             </p>
 
@@ -107,7 +127,10 @@ const MovieModal = ({ movieId, onClose }) => {
                 <h3 className="mb-3 text-lg font-bold text-white">Cast</h3>
                 <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                   {cast.map((actor) => (
-                    <li key={actor.cast_id ?? actor.credit_id} className="flex items-center gap-3">
+                    <li
+                      key={actor.cast_id ?? actor.credit_id}
+                      className="flex items-center gap-3"
+                    >
                       {actor.profile_path ? (
                         <img
                           src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
@@ -120,8 +143,12 @@ const MovieModal = ({ movieId, onClose }) => {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-white">{actor.name}</p>
-                        <p className="truncate text-xs text-gray-100">{actor.character}</p>
+                        <p className="truncate text-sm font-bold text-white">
+                          {actor.name}
+                        </p>
+                        <p className="truncate text-xs text-gray-100">
+                          {actor.character}
+                        </p>
                       </div>
                     </li>
                   ))}

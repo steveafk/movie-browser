@@ -1,19 +1,18 @@
 const Search = ({ searchTerm, setSearchTerm }) => {
-return (
+  return (
+    <div className="search">
+      <div>
+        <img src="/search.png" alt="search" />
 
-    <div className="search" >
-        <div>
-            <img src="/search.png" alt="search" />
-
-            <input
-                type="text"
-                placeholder="Search for a movie..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-            />
-        </div>
+        <input
+          type="text"
+          placeholder="Search for a movie..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
     </div>
-    );
+  )
 }
- 
+
 export default Search
